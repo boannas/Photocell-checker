@@ -86,3 +86,40 @@ python_file/
 
 ### `screen_freq_measure.ino`  
 - Detects screen refresh events (e.g., flickering) to measure refresh rate.
+
+
+---
+
+## Plot Overview (`plot.ipynb` or `plot.py`)
+
+The `plot.ipynb` notebook provides a comprehensive **visual overview** of the monitor refresh stability and LDR signal quality during a specific block of trials.
+
+### Components of the Visualization
+
+1. **Frequency Stability Across Trials (Top Line Plot)**
+   - Each point represents the **estimated refresh frequency** for one trial.
+   - Red dashed lines indicate:
+     - Mean frequency
+     - ±1 standard deviation (SD)
+   - Useful for identifying **instabilities** or **anomalous trials**.
+
+2. **Histogram of Estimated Frequencies (Middle)**
+   - Distribution of trial-level frequency estimates.
+   - Helps assess overall consistency.
+   - Summary stats shown: min, max, mean, std, range.
+
+3. **LDR Signal with Trial Markers (Bottom Grid of Subplots)**
+   - Each subplot shows **raw LDR signal** for 4 trials.
+   - Vertical dashed lines mark:
+     - Trial start (green)
+     - Trial end (red)
+   - Highlights signal quality, latency artifacts, and SSVEP response onset.
+
+### Interpretation Notes
+- Stable flat frequency line = reliable monitor refresh
+- Histogram with narrow spread = high temporal consistency
+- Sudden drops in signal = possible display or sensor issue
+
+[![Preview](plot.png)](plot.png)
+---
+
