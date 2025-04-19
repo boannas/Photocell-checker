@@ -7,6 +7,7 @@ This project is designed to **validate the refresh rate of a monitor** for **SSV
 ## Project Structure
 
 The project contains:
+- **Arduino Sketches** for different measurement types
 - **Jupyter Notebooks** for recording, processing, and visualization
 - **Python Scripts** for modular processing and recording
 - **Data folders** organized by subject ID
@@ -48,24 +49,40 @@ The project contains:
 ## Folder Structure
 
 ```plaintext
-raw_data/
-   └── sXX/
-       └── sXX_block_N_raw.csv
+photocell_arduino/
+  intensity_measure/
+    └── intensity_measure.ino
+  screen_freq_measure/
+    └── screen_freq_measure.ino
 
-process_data/
-   └── sXX/
-       └── sXX_block_N_process.csv
+python_file/
+  raw_data/
+    └── sXX/
+        └── sXX_block_N_raw.csv
 
-functions/
-   ├── photocell.py
-   └── process_freq.py
+  process_data/
+    └── sXX/
+        └── sXX_block_N_process.csv
 
-photocell_record.ipynb
-process_raw.ipynb
-plot.ipynb
+  functions/
+    ├── photocell.py
+    └── process_freq.py
+
+  photocell_record.ipynb
+  process_raw.ipynb
+  plot.ipynb
 ```
 
 - `sXX`: Subject folder (e.g., `s1`, `s2`)
 - `block_N`: Data file for a specific block number (e.g., `block_1`, `block_2`)
 
 ---
+## Arduino Sketch Descriptions
+### `intensity_measure.ino`  
+- Used for **recording LDR (Light Dependent Resistor) sensor values**.
+- Continuously reads **analog input** from the photocell.
+- Sends raw light intensity data via **Serial output** (used by `photocell.py`).
+- This sketch is essential for the **data collection phase** using `photocell_record.ipynb`.
+
+### `screen_freq_measure.ino`  
+- Detects screen refresh events (e.g., flickering) to measure refresh rate.
