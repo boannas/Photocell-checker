@@ -90,7 +90,7 @@ python_file/
 
 ---
 
-## Plot Overview (`plot.ipynb` or `plot.py`)
+## Plot Overview (`plot.ipynb`)
 
 The `plot.ipynb` notebook provides a comprehensive **visual overview** of the monitor refresh stability and LDR signal quality during a specific block of trials.
 
