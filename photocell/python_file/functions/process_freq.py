@@ -137,7 +137,7 @@ def plot_peaks_in_trial(df, marker_start, marker_end, distance=15, prominence=1,
     """
     start_time = df[df['Marker'] == marker_start]['Time (s from start)'].values[0]
     end_time = df[df['Marker'] == marker_end]['Time (s from start)'].values[0]
-    segment = df[(df['Time (s from start)'] >= start_time) & (df['Time (s from start)'] <= end_time + 0.2)]
+    segment = df[(df['Time (s from start)'] >= start_time - 0.2) & (df['Time (s from start)'] <= end_time + 0.2)]
 
     ldr_values = segment['LDR Value'].values
     time_values = segment['Time (s from start)'].values
