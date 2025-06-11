@@ -229,7 +229,7 @@ def plot_hist_freq(freqs):
     plt.tight_layout()
     plt.show()
     
-def plot_all_frequency_and_ldr(df, block_num, trial_labels, frequencies, n_trial, trials_per_subplot=4, ncols=4):
+def plot_all_frequency_and_ldr(df, block_num, trial_labels, frequencies, n_trial, trials_per_subplot=4, ncols=4, plot=True):
     """
     Combines: frequency stability, histogram, and LDR-by-blocks in a single figure.
     """
@@ -245,95 +245,105 @@ def plot_all_frequency_and_ldr(df, block_num, trial_labels, frequencies, n_trial
     # LDR subplot grid size
     total_subplots = math.ceil(n_trial / trials_per_subplot)
     nrows_grid = math.ceil(total_subplots / ncols)
-
-    # Build layout
-    fig = plt.figure(figsize=(5 * ncols, 4 * (nrows_grid + 2)))  # +2 rows for top plots
-
-    # --- Plot 1: Frequency Stability ---
-    ax1 = plt.subplot2grid((nrows_grid + 2, ncols), (0, 0), colspan=ncols)
-    ax1.plot(valid_trials, valid_freqs, marker='o', linestyle='-', color='teal', label='Trial Frequency')
-    ax1.axhline(mean_freq, color='red', linestyle='--', label=f'Mean: {mean_freq:.4f} Hz')
-    ax1.fill_between(valid_trials, mean_freq - std_freq, mean_freq + std_freq, alpha=0.2, color='gray', label='±1 SD')
-
+    
+    outlier = []
     # Highlight and label trials outside ±1 SD
     for trial, freq in zip(valid_trials, valid_freqs):
         if freq < mean_freq - std_freq or freq > mean_freq + std_freq:
-            ax1.text(trial, freq, f'{int(trial)}', color='crimson', fontsize=10, ha='center', va='bottom', weight='bold')
+            outlier.append(trial)
 
-    ax1.set_title("Frequency Stability Across Trials", fontsize=16, fontname='DejaVu Sans')
-    ax1.set_xlabel("Trial Number")
-    ax1.set_ylabel("Frequency (Hz)")
-    ax1.grid(True)
-    ax1.legend()
+    print("Not in range of SD +- 1: ", outlier)
+    print("Outlier No.: ", len(outlier))
 
-    # --- Plot 2: Histogram ---
-    ax2 = plt.subplot2grid((nrows_grid + 2, ncols), (1, 0), colspan=ncols)
-    counts, bins, _ = ax2.hist(valid_freqs, bins=30, color='teal', edgecolor='teal')
-    ax2.axvspan(mean_freq - std_freq, mean_freq + std_freq, color='gray', alpha=0.2, label='±1 SD')
-    ax2.axvline(mean_freq, color='red', linestyle='--', label=f'Mean: {mean_freq:.4f}')
-    ax2.axvline(mean_freq - std_freq, color='gray', linestyle=':', linewidth=1)
-    ax2.axvline(mean_freq + std_freq, color='gray', linestyle=':', linewidth=1)
+    if plot:
+        # Build layout
+        fig = plt.figure(figsize=(5 * ncols, 4 * (nrows_grid + 2)))  # +2 rows for top plots
 
-    min_x, max_x = bins[0], bins[-1]
-    range_x = max_x - min_x
-    label_text = (f"min x: {min_x:.4f}\nmax x: {max_x:.4f}\nrange: {range_x:.4f}\n"
-                  f"mean: {mean_freq:.4f}\nstd: {std_freq:.4f}")
-    ax2.text(0.98, 0.98, label_text, transform=ax2.transAxes, ha='right', va='top',
-             fontsize=10, bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5'))
-    ax2.set_title("Histogram of Estimated Frequencies (with ±1 SD)", fontsize=16, fontname='DejaVu Sans')
-    ax2.set_xlabel("Frequency (Hz)")
-    ax2.set_ylabel("Count")
-    ax2.grid(True)
-    ax2.legend()
+        # --- Plot 1: Frequency Stability ---
+        ax1 = plt.subplot2grid((nrows_grid + 2, ncols), (0, 0), colspan=ncols)
+        ax1.plot(valid_trials, valid_freqs, marker='o', linestyle='-', color='teal', label='Trial Frequency')
+        ax1.axhline(mean_freq, color='red', linestyle='--', label=f'Mean: {mean_freq:.4f} Hz')
+        ax1.fill_between(valid_trials, mean_freq - std_freq, mean_freq + std_freq, alpha=0.2, color='gray', label='±1 SD')
 
-    # --- Plot 3: LDR Grid (Start from row 2) ---
-    for i in range(total_subplots):
-        row = i // ncols + 2  # start from row 2
-        col = i % ncols
-        ax = plt.subplot2grid((nrows_grid + 2, ncols), (row, col))
+        
+        ax1.set_title("Frequency Stability Across Trials", fontsize=16, fontname='DejaVu Sans')
+        ax1.set_xlabel("Trial Number")
+        ax1.set_ylabel("Frequency (Hz)")
+        ax1.grid(True)
+        ax1.legend()
+        for trial, freq in zip(valid_trials, valid_freqs):
+            if freq < mean_freq - std_freq or freq > mean_freq + std_freq:
+                ax1.text(trial, freq, f'{int(trial)}', color='crimson', fontsize=10, ha='center', va='bottom', weight='bold')
 
-        start_trial = i * trials_per_subplot + 1
-        end_trial = min(start_trial + trials_per_subplot - 1, n_trial)
+        # --- Plot 2: Histogram ---
+        ax2 = plt.subplot2grid((nrows_grid + 2, ncols), (1, 0), colspan=ncols)
+        counts, bins, _ = ax2.hist(valid_freqs, bins=30, color='teal', edgecolor='teal')
+        ax2.axvspan(mean_freq - std_freq, mean_freq + std_freq, color='gray', alpha=0.2, label='±1 SD')
+        ax2.axvline(mean_freq, color='red', linestyle='--', label=f'Mean: {mean_freq:.4f}')
+        ax2.axvline(mean_freq - std_freq, color='gray', linestyle=':', linewidth=1)
+        ax2.axvline(mean_freq + std_freq, color='gray', linestyle=':', linewidth=1)
 
-        try:
-            t_start = df[df['Marker'] == f"trial_{start_trial}"]['Time (s from start)'].values[0]
-            t_end = df[df['Marker'] == f"end_{end_trial}"]['Time (s from start)'].values[0]
-        except IndexError:
-            print(f"Skipping subplot {i}: missing marker for trials {start_trial}-{end_trial}")
-            continue
+        min_x, max_x = bins[0], bins[-1]
+        range_x = max_x - min_x
+        label_text = (f"min x: {min_x:.4f}\nmax x: {max_x:.4f}\nrange: {range_x:.4f}\n"
+                    f"mean: {mean_freq:.4f}\nstd: {std_freq:.4f}")
+        ax2.text(0.98, 0.98, label_text, transform=ax2.transAxes, ha='right', va='top',
+                fontsize=10, bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5'))
+        ax2.set_title("Histogram of Estimated Frequencies (with ±1 SD)", fontsize=16, fontname='DejaVu Sans')
+        ax2.set_xlabel("Frequency (Hz)")
+        ax2.set_ylabel("Count")
+        ax2.grid(True)
+        ax2.legend()
 
-        window_df = df[(df['Time (s from start)'] >= t_start) & (df['Time (s from start)'] <= t_end)]
-        ax.plot(window_df['Time (s from start)'], window_df['LDR Value'], color='gray', linewidth=0.8)
+        # --- Plot 3: LDR Grid (Start from row 2) ---
+        for i in range(total_subplots):
+            row = i // ncols + 2  # start from row 2
+            col = i % ncols
+            ax = plt.subplot2grid((nrows_grid + 2, ncols), (row, col))
 
-        for trial_num in range(start_trial, end_trial + 1):
+            start_trial = i * trials_per_subplot + 1
+            end_trial = min(start_trial + trials_per_subplot - 1, n_trial)
+
             try:
-                t0 = df[df['Marker'] == f"trial_{trial_num}"]['Time (s from start)'].values[0]
-                t1 = df[df['Marker'] == f"end_{trial_num}"]['Time (s from start)'].values[0]
-                segment = df[(df['Time (s from start)'] >= t0) & (df['Time (s from start)'] <= t1)]
-                ax.plot(segment['Time (s from start)'], segment['LDR Value'], label=f'Trial {trial_num}', color='cadetblue')
-                ax.axvline(t0, color='green', linestyle='--')
-                ax.axvline(t1, color='red', linestyle='--')
-                ax.text(t0, 1.02, f'{trial_num}', color='darkgreen', fontsize=9, ha='center', transform=ax.get_xaxis_transform())
-                ax.text(t1, 1.02, f'{trial_num}', color='maroon', fontsize=9, ha='center', transform=ax.get_xaxis_transform())
+                t_start = df[df['Marker'] == f"trial_{start_trial}"]['Time (s from start)'].values[0]
+                t_end = df[df['Marker'] == f"end_{end_trial}"]['Time (s from start)'].values[0]
             except IndexError:
+                print(f"Skipping subplot {i}: missing marker for trials {start_trial}-{end_trial}")
                 continue
 
-        ax.set_title(f"{start_trial}-{end_trial}", fontname='DejaVu Sans')
-        ax.set_xlabel("Time (s)")
-        ax.set_ylabel("LDR Value")
-        ax.grid(True)
+            window_df = df[(df['Time (s from start)'] >= t_start) & (df['Time (s from start)'] <= t_end)]
+            ax.plot(window_df['Time (s from start)'], window_df['LDR Value'], color='gray', linewidth=0.8)
 
-    # Add a section title for the LDR block
-    # ldr_title_y = 1 - (2 / (nrows_grid + 2))  
-    fig.text(0.5, 0.635, "LDR Signal with Trial Markers", ha='center', fontsize=16, fontname='DejaVu Sans')
+            for trial_num in range(start_trial, end_trial + 1):
+                try:
+                    t0 = df[df['Marker'] == f"trial_{trial_num}"]['Time (s from start)'].values[0]
+                    t1 = df[df['Marker'] == f"end_{trial_num}"]['Time (s from start)'].values[0]
+                    segment = df[(df['Time (s from start)'] >= t0) & (df['Time (s from start)'] <= t1)]
+                    ax.plot(segment['Time (s from start)'], segment['LDR Value'], label=f'Trial {trial_num}', color='cadetblue')
+                    ax.axvline(t0, color='green', linestyle='--')
+                    ax.axvline(t1, color='red', linestyle='--')
+                    ax.text(t0, 1.02, f'{trial_num}', color='darkgreen', fontsize=9, ha='center', transform=ax.get_xaxis_transform())
+                    ax.text(t1, 1.02, f'{trial_num}', color='maroon', fontsize=9, ha='center', transform=ax.get_xaxis_transform())
+                except IndexError:
+                    continue
 
-    # Global title
-    fig.suptitle(f"Frequency and LDR Signal Overview Block_{block_num}", fontsize=20, y=0.995, weight='bold', fontname='DejaVu Sans')
+            ax.set_title(f"{start_trial}-{end_trial}", fontname='DejaVu Sans')
+            ax.set_xlabel("Time (s)")
+            ax.set_ylabel("LDR Value")
+            ax.grid(True)
 
-    # Layout fix
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.95, hspace=0.4)
-    plt.show()
+        # Add a section title for the LDR block
+        # ldr_title_y = 1 - (2 / (nrows_grid + 2))  
+        fig.text(0.5, 0.635, "LDR Signal with Trial Markers", ha='center', fontsize=16, fontname='DejaVu Sans')
+
+        # Global title
+        fig.suptitle(f"Frequency and LDR Signal Overview Block_{block_num}", fontsize=20, y=0.995, weight='bold', fontname='DejaVu Sans')
+
+        # Layout fix
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.95, hspace=0.4)
+        plt.show()
+    return outlier
 
 
 import numpy as np
