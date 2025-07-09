@@ -23,6 +23,7 @@ def run_ldr_recording_raw(subject, num_block='test101', port='COM5', baudrate=11
     # initial 2 threading logic
     stop_event = threading.Event()
     recording = threading.Event() 
+    recording.set()  # Start recording immediately
 
     # === LDR Reading Thread ===
     def read_ldr():
@@ -64,29 +65,22 @@ def run_ldr_recording_raw(subject, num_block='test101', port='COM5', baudrate=11
                 trigger = sample[0]
                 print(f"[Marker] {trigger}, timestep: {timestamp:.6f}s")
 
-                # Start to record Marker after block start
-                if trigger.startswith('Start Block') or trigger.startswith('trial_1'):
-                    # Extract block number
+                # Update block number if Start Block marker is received
+                if trigger.startswith('Start Block'):
                     parts = trigger.split()
                     if len(parts) >= 3:
-                        block_number_from_marker[0] = parts[2] 
-                    # Start record LDR value
-                    recording.set()
-                    print(f"[INFO] Recording STARTED (Block {block_number_from_marker[0]}).")
-                    raw_data.append((timestamp, trigger, 'Marker'))
-                    
-                elif trigger.startswith('End Block'):
+                        block_number_from_marker[0] = parts[2]
+
+                if trigger.startswith('End Block'):
                     # Stop record for every value and end the program
                     recording.clear()
                     print("[INFO] Recording ENDED. Stopping...")
                     raw_data.append((timestamp, trigger, 'Marker'))
                     stop_event.set()
-                    
                 else:
                     # Record for any data between Starting and ending blocks
                     if recording.is_set():
                         raw_data.append((timestamp, trigger, 'Marker'))
-
 
     # === Start Threads ===
     # Create multiple thread computing at the same time
@@ -134,5 +128,5 @@ def run_multiple_blocks(subject, n_blocks=3, port='COM5', baudrate=115200):
     for i in range(1, n_blocks + 1):
         block_id = f"block_{i}"
         print(f"\n===== Starting {block_id} =====")
-        run_ldr_recording_raw(subject, num_block=i, port=port, baudrate=baudrate)
+        run_ldr_recording_raw(subject, num_block=str(i), port=port, baudrate=baudrate)
         print(f"===== Finished {block_id} =====\n")
